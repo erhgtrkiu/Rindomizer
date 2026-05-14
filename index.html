@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TWEAKOS // NEXUS EXTENDED 5</title>
+    <title>TWEAKOS // NEXUS DYNAMIC LOGIC</title>
     <style>
         :root {
             --bg: #020203;
@@ -46,7 +46,6 @@
         #overlay { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; pointer-events: none; }
         .winner-container { position: relative; display: flex; flex-direction: column; align-items: center; opacity: 0; transform: scale(0.5); }
         
-        /* Классы для разной длительности анимации */
         .winner-container.show-normal { animation: popSquare 4s forwards; }
         .winner-container.show-long { animation: popSquare 8s forwards; }
 
@@ -69,7 +68,6 @@
 
         @keyframes spinDisk { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         
-        /* Общая анимация появления и исчезновения */
         @keyframes popSquare {
             0% { opacity: 0; transform: scale(0.5) translateY(50px); }
             10% { opacity: 1; transform: scale(1.1) translateY(0); }
@@ -139,8 +137,18 @@
         if (busy) return;
         const min = parseInt(document.getElementById('min').value);
         const max = parseInt(document.getElementById('max').value);
+        
         let winner;
-        do { winner = Math.floor(Math.random() * (max - min + 1)) + min; } while (winner === 4 || winner === 16);
+        
+        // НОВАЯ ЛОГИКА: 4 и 16 не выпадают ТОЛЬКО при диапазоне 1-23
+        if (min === 1 && max === 23) {
+            do {
+                winner = Math.floor(Math.random() * (max - min + 1)) + min;
+            } while (winner === 4 || winner === 16);
+        } else {
+            winner = Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
         busy = true;
         if (mode === 'case') runCase(winner, min, max);
         if (mode === 'upgrade') runUpgrade(winner);
@@ -188,6 +196,70 @@
                 t.appendChild(d);
             }
             setTimeout(() => {
+                t.style.transition = 'transform 4s cubic-bezier(0.1, 0, 0, 1)';
+                t.style.transform = `translateY(-${(len-1)*100}px)`;
+            }, i * 2000);
+        }
+        showFinal(win, 8500);
+    }
+
+    function showFinal(num, delay) {
+        setTimeout(() => {
+            document.getElementById('app').classList.add('blurred');
+            const over = document.getElementById('overlay');
+            over.innerHTML = '';
+
+            const container = document.createElement('div');
+            container.className = num === 5 ? 'winner-container show-long' : 'winner-container show-normal';
+            
+            if (num === 5) {
+                const diskWrap = document.createElement('div');
+                diskWrap.className = 'ez-disk-wrap';
+                diskWrap.innerHTML = `
+                    <svg class="ez-disk-svg" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="48" fill="#111" stroke="#222" stroke-width="1"/>
+                        <circle cx="50" cy="50" r="40" fill="none" stroke="#181818" stroke-width="0.5" />
+                        <circle cx="50" cy="50" r="30" fill="none" stroke="#181818" stroke-width="0.5" />
+                        <circle cx="50" cy="50" r="15" fill="#000" stroke="var(--accent)" stroke-width="0.5"/>
+                        <path id="curve" d="M 12,50 A 38,38 0 1,1 88,50 A 38,38 0 1,1 12,50" fill="none" />
+                        <text fill="var(--accent)" font-size="6" font-weight="900" letter-spacing="4">
+                            <textPath href="#curve">
+                                EZ4ENCE • EZ4ENCE • EZ4ENCE • EZ4ENCE •
+                            </textPath>
+                        </text>
+                    </svg>
+                `;
+                container.appendChild(diskWrap);
+            }
+
+            const square = document.createElement('div');
+            square.className = 'winner-square';
+            square.innerHTML = `
+                <div style="font-size: 10px; color: var(--accent); margin-bottom: 5px; font-weight:900;">WINNER</div>
+                <div style="font-size: 85px; font-weight: 900; color: #fff;">${num}</div>
+            `;
+            
+            const meme = document.createElement('div');
+            meme.className = 'win-meme';
+            meme.innerText = memes[Math.floor(Math.random() * memes.length)];
+
+            container.appendChild(square);
+            container.appendChild(meme);
+            over.appendChild(container);
+
+            const displayTime = num === 5 ? 8000 : 4000;
+
+            setTimeout(() => {
+                document.getElementById('app').classList.remove('blurred');
+                over.innerHTML = '';
+                busy = false;
+            }, displayTime);
+        }, delay);
+    }
+</script>
+</body>
+</html>
+  setTimeout(() => {
                 t.style.transition = 'transform 4s cubic-bezier(0.1, 0, 0, 1)';
                 t.style.transform = `translateY(-${(len-1)*100}px)`;
             }, i * 2000);
