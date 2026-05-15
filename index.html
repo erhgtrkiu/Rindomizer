@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TWEAKOS // NEXUS MULTI-CORE v12.2</title>
+    <title>TWEAKOS // NEXUS MULTI-CORE v12.3</title>
     <style>
         :root {
             --bg: #020203;
@@ -36,7 +36,7 @@
         .case-tape { display: flex; position: absolute; left: 50%; height: 100%; will-change: transform; }
         .case-item { min-width: 60px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; border-right: 1px solid #111; color: #333; }
 
-        /* WHEEL (Static sectors, spinning arrow) */
+        /* WHEEL */
         .wheel-container { position: relative; width: 90px; height: 90px; border-radius: 50%; }
         .wheel-arrow { 
             position: absolute; top: 50%; left: 50%; width: 2px; height: 40px; 
@@ -45,7 +45,7 @@
         }
         .wheel-arrow::after { content: ''; position: absolute; bottom: -5px; left: -4px; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 8px solid var(--accent); }
 
-        /* SLOTS (Dynamic Reels) */
+        /* SLOTS */
         .slot-row { display: flex; gap: 4px; justify-content: center; width: 100%; }
         .slot-col { width: 24px; height: 40px; background: #050505; border: 1px solid #222; border-radius: 4px; overflow: hidden; position: relative; }
         .slot-tape { position: absolute; width: 100%; will-change: transform; }
@@ -95,9 +95,11 @@
 </head>
 <body>
 
+<audio id="ez-audio" src="ez4ence.ogg"></audio>
+
 <div id="app">
     <div class="header">
-        <div style="font-size: 10px; color: #444; letter-spacing: 3px; font-weight: 900;">NEXUS MULTI-ENGINE v12.2</div>
+        <div style="font-size: 10px; color: #444; letter-spacing: 3px; font-weight: 900;">NEXUS MULTI-ENGINE v12.3</div>
         <div class="tabs">
             <div class="tab active" onclick="setMode('case')">Cases</div>
             <div class="tab" onclick="setMode('upgrade')">Wheels</div>
@@ -185,8 +187,9 @@
     function initWheel(el, win, min, max, idx) {
         const range = max - min + 1;
         let sectorsSvg = '';
-        for(let i = 0; i < Math.min(range, 24); i++) {
-            const angle = (360 / Math.min(range, 24)) * i;
+        const displaySectors = Math.min(range, 24);
+        for(let i = 0; i < displaySectors; i++) {
+            const angle = (360 / displaySectors) * i;
             sectorsSvg += `<line x1="50" y1="50" x2="50" y2="5" stroke="#1a1a1a" stroke-width="0.5" transform="rotate(${angle}, 50, 50)" />`;
         }
         el.innerHTML = `
@@ -232,6 +235,14 @@
         document.getElementById('app').classList.add('blurred');
         const over = document.getElementById('overlay'); over.innerHTML = '';
         const hasSpecial = nums.includes(5);
+        
+        // ВОСПРОИЗВЕДЕНИЕ ЗВУКА
+        if (hasSpecial) {
+            const audio = document.getElementById('ez-audio');
+            audio.currentTime = 0;
+            audio.play().catch(e => console.log("Audio play failed:", e));
+        }
+
         const container = document.createElement('div');
         container.className = 'winner-container';
         container.style.animation = `popIn ${hasSpecial ? 8 : 4}s forwards`;
@@ -265,9 +276,13 @@
         const meme = document.createElement('div'); meme.className = 'win-meme';
         meme.innerText = memes[Math.floor(Math.random() * memes.length)];
         container.appendChild(grid); container.appendChild(meme); over.appendChild(container);
+        
         setTimeout(() => {
             document.getElementById('app').classList.remove('blurred');
             over.innerHTML = ''; busy = false;
+            // Стопаем звук при закрытии, если нужно
+            const audio = document.getElementById('ez-audio');
+            audio.pause();
         }, hasSpecial ? 8000 : 4000);
     }
 </script>
