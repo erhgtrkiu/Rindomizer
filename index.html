@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TWEAKOS // NEXUS MULTI-CORE v12.3</title>
+    <title>TWEAKOS // NEXUS MULTI-CORE v12.5</title>
     <style>
         :root {
             --bg: #020203;
@@ -51,7 +51,7 @@
         .slot-tape { position: absolute; width: 100%; will-change: transform; }
         .slot-num { height: 40px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; color: #444; }
 
-        /* FINAL OVERLAY & ADAPTIVE SQUARE */
+        /* OVERLAY & SQUARE */
         #overlay { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; pointer-events: none; }
         .winner-container { display: flex; flex-direction: column; align-items: center; opacity: 0; width: 100%; }
         .final-grid { display: flex; flex-wrap: wrap; gap: 45px 25px; justify-content: center; max-width: 95vw; padding-top: 60px; }
@@ -95,11 +95,9 @@
 </head>
 <body>
 
-<audio id="ez-audio" src="ez4ence.ogg"></audio>
-
 <div id="app">
     <div class="header">
-        <div style="font-size: 10px; color: #444; letter-spacing: 3px; font-weight: 900;">NEXUS MULTI-ENGINE v12.3</div>
+        <div style="font-size: 10px; color: #444; letter-spacing: 3px; font-weight: 900;">NEXUS MULTI-ENGINE v12.5</div>
         <div class="tabs">
             <div class="tab active" onclick="setMode('case')">Cases</div>
             <div class="tab" onclick="setMode('upgrade')">Wheels</div>
@@ -147,16 +145,25 @@
         container.innerHTML = ''; busy = true;
 
         let results = [];
-        const isRestricted = (min === 1 && max === 23);
 
         for (let i = 0; i < count; i++) {
             let win;
             let att = 0;
+            
+            function generateNum() {
+                return Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+
             do {
-                win = Math.floor(Math.random() * (max - min + 1)) + min;
-                var isBlocked = (isRestricted && (win === 4 || win === 16)) || manualExcludes.includes(win);
+                win = generateNum();
+                if ((win === 4 || win === 16)) {
+                    if (Math.random() < 0.80) {
+                        win = generateNum(); 
+                    }
+                }
+                var isExcluded = manualExcludes.includes(win);
                 att++;
-            } while (isBlocked && att < 500);
+            } while (isExcluded && att < 100);
             
             results.push(win);
             const widget = document.createElement('div');
@@ -187,9 +194,8 @@
     function initWheel(el, win, min, max, idx) {
         const range = max - min + 1;
         let sectorsSvg = '';
-        const displaySectors = Math.min(range, 24);
-        for(let i = 0; i < displaySectors; i++) {
-            const angle = (360 / displaySectors) * i;
+        for(let i = 0; i < Math.min(range, 24); i++) {
+            const angle = (360 / Math.min(range, 24)) * i;
             sectorsSvg += `<line x1="50" y1="50" x2="50" y2="5" stroke="#1a1a1a" stroke-width="0.5" transform="rotate(${angle}, 50, 50)" />`;
         }
         el.innerHTML = `
@@ -234,15 +240,8 @@
     function showFinal(nums) {
         document.getElementById('app').classList.add('blurred');
         const over = document.getElementById('overlay'); over.innerHTML = '';
-        const hasSpecial = nums.includes(5);
-        
-        // ВОСПРОИЗВЕДЕНИЕ ЗВУКА
-        if (hasSpecial) {
-            const audio = document.getElementById('ez-audio');
-            audio.currentTime = 0;
-            audio.play().catch(e => console.log("Audio play failed:", e));
-        }
-
+        // Элитные числа: 5 и 21
+        const hasSpecial = nums.some(n => n === 5 || n === 21);
         const container = document.createElement('div');
         container.className = 'winner-container';
         container.style.animation = `popIn ${hasSpecial ? 8 : 4}s forwards`;
@@ -254,7 +253,7 @@
             const numLen = n.toString().length;
             if(numLen > 2) sq.style.minWidth = (110 + (numLen - 2) * 25) + 'px';
 
-            if (n === 5) {
+            if (n === 5 || n === 21) {
                 sq.innerHTML = `
                 <div class="ez-disk-wrap">
                     <svg viewBox="0 0 100 100" style="width:100%; height:100%;">
@@ -276,13 +275,9 @@
         const meme = document.createElement('div'); meme.className = 'win-meme';
         meme.innerText = memes[Math.floor(Math.random() * memes.length)];
         container.appendChild(grid); container.appendChild(meme); over.appendChild(container);
-        
         setTimeout(() => {
             document.getElementById('app').classList.remove('blurred');
             over.innerHTML = ''; busy = false;
-            // Стопаем звук при закрытии, если нужно
-            const audio = document.getElementById('ez-audio');
-            audio.pause();
         }, hasSpecial ? 8000 : 4000);
     }
 </script>
