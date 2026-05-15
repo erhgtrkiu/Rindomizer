@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TWEAKOS // NEXUS MULTI-CORE v11.0</title>
+    <title>TWEAKOS // NEXUS MULTI-CORE v12.2</title>
     <style>
         :root {
             --bg: #020203;
@@ -24,55 +24,54 @@
         .tab.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
 
         #viewport-container { 
-            flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); 
+            flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); 
             gap: 15px; padding: 20px; overflow-y: auto; align-content: center; justify-content: center;
         }
 
-        .widget { background: #000; border: 1px solid #1a1a1a; border-radius: 12px; height: 100px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .widget { background: #000; border: 1px solid #1a1a1a; border-radius: 12px; height: 110px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
 
-        /* CASE ANIMATION */
+        /* CASE */
         .case-mini { width: 100%; height: 60px; position: relative; overflow: hidden; }
         .case-pointer { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: var(--accent); z-index: 5; transform: translateX(-50%); }
         .case-tape { display: flex; position: absolute; left: 50%; height: 100%; will-change: transform; }
         .case-item { min-width: 60px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; border-right: 1px solid #111; color: #333; }
 
-        /* WHEEL ANIMATION */
-        .wheel-wrap { position: relative; width: 60px; height: 60px; }
-        .wheel-svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+        /* WHEEL (Static sectors, spinning arrow) */
+        .wheel-container { position: relative; width: 90px; height: 90px; border-radius: 50%; }
+        .wheel-arrow { 
+            position: absolute; top: 50%; left: 50%; width: 2px; height: 40px; 
+            background: var(--accent); transform-origin: top center; z-index: 10;
+            translate: -50% 0; box-shadow: 0 0 10px var(--accent);
+        }
+        .wheel-arrow::after { content: ''; position: absolute; bottom: -5px; left: -4px; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 8px solid var(--accent); }
 
-        /* SLOT ANIMATION */
-        .slot-row { display: flex; gap: 5px; }
-        .slot-col { width: 28px; height: 45px; background: #050505; border: 1px solid #222; border-radius: 4px; overflow: hidden; position: relative; }
+        /* SLOTS (Dynamic Reels) */
+        .slot-row { display: flex; gap: 4px; justify-content: center; width: 100%; }
+        .slot-col { width: 24px; height: 40px; background: #050505; border: 1px solid #222; border-radius: 4px; overflow: hidden; position: relative; }
         .slot-tape { position: absolute; width: 100%; will-change: transform; }
-        .slot-num { height: 45px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; }
+        .slot-num { height: 40px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; color: #444; }
 
-        /* FINAL OVERLAY */
+        /* FINAL OVERLAY & ADAPTIVE SQUARE */
         #overlay { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; pointer-events: none; }
         .winner-container { display: flex; flex-direction: column; align-items: center; opacity: 0; width: 100%; }
-        .final-grid { display: flex; flex-wrap: wrap; gap: 40px 20px; justify-content: center; max-width: 95vw; padding-top: 50px; }
+        .final-grid { display: flex; flex-wrap: wrap; gap: 45px 25px; justify-content: center; max-width: 95vw; padding-top: 60px; }
 
         .winner-square { 
-            width: 110px; height: 110px; background: rgba(5, 5, 5, 1); 
-            border: 2px solid var(--accent); border-radius: 20px; 
+            min-width: 110px; height: 110px; padding: 0 15px;
+            background: #050505; border: 2px solid var(--accent); border-radius: 20px; 
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             box-shadow: 0 0 30px var(--accent-glow);
             position: relative; 
         }
         
-        /* THE PERFECT DISK: Narrower than square, peeks only from top */
         .ez-disk-wrap { 
-            position: absolute; 
-            top: -45%; /* Выглядывает сверху */
-            left: 50%;
-            transform: translateX(-50%);
-            width: 85%; /* МЕНЬШЕ ширины квадрата, чтобы не было видно по бокам */
-            height: 85%;
-            z-index: -1; /* Строго под квадратом */
+            position: absolute; top: -45%; left: 50%; transform: translateX(-50%);
+            width: 85%; height: 85%; z-index: -1; 
             animation: spinDisk 4s linear infinite; 
             pointer-events: none;
         }
 
-        .win-info { position: relative; z-index: 10; text-align: center; pointer-events: none; } 
+        .win-info { position: relative; z-index: 10; text-align: center; white-space: nowrap; } 
         .win-num { font-size: 42px; font-weight: 900; color: #fff; line-height: 1; }
         .win-meme { margin-top: 50px; font-size: 18px; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 5px; text-align: center; }
 
@@ -98,7 +97,7 @@
 
 <div id="app">
     <div class="header">
-        <div style="font-size: 10px; color: #444; letter-spacing: 3px; font-weight: 900;">NEXUS MULTI-ENGINE v11.0</div>
+        <div style="font-size: 10px; color: #444; letter-spacing: 3px; font-weight: 900;">NEXUS MULTI-ENGINE v12.2</div>
         <div class="tabs">
             <div class="tab active" onclick="setMode('case')">Cases</div>
             <div class="tab" onclick="setMode('upgrade')">Wheels</div>
@@ -113,10 +112,10 @@
             <input type="number" id="count" value="1">
         </div>
         <div class="full-grid">
-            <label>Exclusion Protocol (Manual Block)</label>
-            <input type="text" id="exclude" placeholder="e.g. 7, 13, 21">
+            <label>Exclusion Protocol</label>
+            <input type="text" id="exclude" placeholder="e.g. 7, 13">
         </div>
-        <button id="roll-btn" class="btn-roll" onclick="roll()">Execute All Cores</button>
+        <button id="roll-btn" class="btn-roll" onclick="roll()">Sync Cores & Execute</button>
     </div>
 </div>
 
@@ -146,16 +145,16 @@
         container.innerHTML = ''; busy = true;
 
         let results = [];
-        const isRestrictedRange = (min === 1 && max === 23);
+        const isRestricted = (min === 1 && max === 23);
 
         for (let i = 0; i < count; i++) {
             let win;
-            let attempts = 0;
+            let att = 0;
             do {
                 win = Math.floor(Math.random() * (max - min + 1)) + min;
-                var isBlocked = (isRestrictedRange && (win === 4 || win === 16)) || manualExcludes.includes(win);
-                attempts++;
-            } while (isBlocked && attempts < 500);
+                var isBlocked = (isRestricted && (win === 4 || win === 16)) || manualExcludes.includes(win);
+                att++;
+            } while (isBlocked && att < 500);
             
             results.push(win);
             const widget = document.createElement('div');
@@ -163,10 +162,10 @@
             container.appendChild(widget);
 
             if (mode === 'case') initCase(widget, win, min, max, i);
-            else if (mode === 'upgrade') initWheel(widget, win, i);
-            else initSlot(widget, win, i);
+            else if (mode === 'upgrade') initWheel(widget, win, min, max, i);
+            else initSlot(widget, win, max, i);
         }
-        setTimeout(() => showFinal(results), mode === 'slot' ? 5500 : 4000);
+        setTimeout(() => showFinal(results), mode === 'slot' ? 6000 : 4500);
     }
 
     function initCase(el, win, min, max, idx) {
@@ -183,32 +182,48 @@
         }, 50);
     }
 
-    function initWheel(el, win, idx) {
-        el.innerHTML = `<div class="wheel-wrap"><svg class="wheel-svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="#111" stroke-width="6"/><circle id="w-circ-${idx}" cx="50" cy="50" r="45" fill="none" stroke="var(--accent)" stroke-width="6" stroke-dasharray="283" stroke-dashoffset="283"/></svg><div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:900;">?</div></div>`;
+    function initWheel(el, win, min, max, idx) {
+        const range = max - min + 1;
+        let sectorsSvg = '';
+        for(let i = 0; i < Math.min(range, 24); i++) {
+            const angle = (360 / Math.min(range, 24)) * i;
+            sectorsSvg += `<line x1="50" y1="50" x2="50" y2="5" stroke="#1a1a1a" stroke-width="0.5" transform="rotate(${angle}, 50, 50)" />`;
+        }
+        el.innerHTML = `
+            <div class="wheel-container">
+                <svg viewBox="0 0 100 100" style="width:100%; height:100%;">
+                    <circle cx="50" cy="50" r="45" fill="#050505" stroke="#1a1a1a" stroke-width="2"/>
+                    ${sectorsSvg}
+                    <circle cx="50" cy="50" r="4" fill="var(--accent)"/>
+                </svg>
+                <div class="wheel-arrow" id="arrow-${idx}"></div>
+            </div>`;
         setTimeout(() => {
-            const c = document.getElementById(`w-circ-${idx}`);
-            c.style.transition = `stroke-dashoffset 3.5s linear`;
-            c.style.strokeDashoffset = 0;
+            const arrow = document.getElementById(`arrow-${idx}`);
+            const targetAngle = ((win - min) / range) * 360 + (360 * 5);
+            arrow.style.transition = `transform 3.5s cubic-bezier(0.1, 0, 0, 1)`;
+            arrow.style.transform = `rotate(${targetAngle}deg)`;
         }, 50);
     }
 
-    function initSlot(el, win, idx) {
+    function initSlot(el, win, maxVal, idx) {
+        const reelsCount = maxVal.toString().length;
         el.innerHTML = `<div class="slot-row" id="s-row-${idx}"></div>`;
         const row = document.getElementById(`s-row-${idx}`);
-        const str = win.toString().padStart(2, '0');
-        for(let i=0; i<2; i++) {
+        const winStr = win.toString().padStart(reelsCount, '0');
+        for(let i=0; i < reelsCount; i++) {
             const col = document.createElement('div'); col.className = 'slot-col';
             col.innerHTML = `<div class="slot-tape" id="st-${idx}-${i}"></div>`;
             row.appendChild(col);
             const tape = document.getElementById(`st-${idx}-${i}`);
             for(let j=0; j<40; j++) {
                 const n = document.createElement('div'); n.className = 'slot-num';
-                n.innerText = j === 39 ? str[i] : Math.floor(Math.random()*10);
+                n.innerText = j === 39 ? winStr[i] : Math.floor(Math.random()*10);
                 tape.appendChild(n);
             }
             setTimeout(() => {
-                tape.style.transition = `transform ${3 + i}s cubic-bezier(0.1, 0, 0, 1)`;
-                tape.style.transform = `translateY(-${39*45}px)`;
+                tape.style.transition = `transform ${3 + (i * 0.5)}s cubic-bezier(0.1, 0, 0, 1)`;
+                tape.style.transform = `translateY(-${39*40}px)`;
             }, 50);
         }
     }
@@ -220,30 +235,28 @@
         const container = document.createElement('div');
         container.className = 'winner-container';
         container.style.animation = `popIn ${hasSpecial ? 8 : 4}s forwards`;
-
         const grid = document.createElement('div'); grid.className = 'final-grid';
 
         nums.forEach(n => {
             const sq = document.createElement('div'); sq.className = 'winner-square';
             const uid = Math.random().toString(36).substr(2, 9);
-            
+            const numLen = n.toString().length;
+            if(numLen > 2) sq.style.minWidth = (110 + (numLen - 2) * 25) + 'px';
+
             if (n === 5) {
                 sq.innerHTML = `
                 <div class="ez-disk-wrap">
                     <svg viewBox="0 0 100 100" style="width:100%; height:100%;">
                         <circle cx="50" cy="50" r="48" fill="#050505" stroke="var(--accent)" stroke-width="1"/>
                         <path id="path-${uid}" d="M 15,50 A 35,35 0 1,1 85,50 A 35,35 0 1,1 15,50" fill="none"/>
-                        <text fill="var(--accent)" font-size="7" font-weight="900">
-                            <textPath href="#path-${uid}">EZ4ENCE • EZ4ENCE • EZ4ENCE • EZ4ENCE •</textPath>
-                        </text>
+                        <text fill="var(--accent)" font-size="7" font-weight="900"><textPath href="#path-${uid}">EZ4ENCE • EZ4ENCE • EZ4ENCE • EZ4ENCE •</textPath></text>
                         <circle cx="50" cy="50" r="12" fill="#000" stroke="var(--accent)" stroke-width="1"/>
                     </svg>
                 </div>`;
             }
-
             sq.innerHTML += `
             <div class="win-info">
-                <div style="font-size:7px; color:var(--accent); font-weight:900; margin-bottom:2px; letter-spacing:1px;">RESULT</div>
+                <div style="font-size:7px; color:var(--accent); font-weight:900; margin-bottom:2px; letter-spacing:1px;">CORE RESULT</div>
                 <div class="win-num">${n}</div>
             </div>`;
             grid.appendChild(sq);
@@ -252,7 +265,6 @@
         const meme = document.createElement('div'); meme.className = 'win-meme';
         meme.innerText = memes[Math.floor(Math.random() * memes.length)];
         container.appendChild(grid); container.appendChild(meme); over.appendChild(container);
-
         setTimeout(() => {
             document.getElementById('app').classList.remove('blurred');
             over.innerHTML = ''; busy = false;
