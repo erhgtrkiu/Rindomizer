@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TWEAKOS // NEXUS DYNAMIC LOGIC</title>
+    <title>TWEAKOS // NEXUS MULTI-CORE v11.0</title>
     <style>
         :root {
             --bg: #020203;
@@ -15,102 +15,108 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body, html { margin: 0; padding: 0; background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; }
 
-        #app { display: flex; flex-direction: column; height: 100%; transition: 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        #app { display: flex; flex-direction: column; height: 100%; transition: 0.8s; }
         .blurred { filter: blur(35px) brightness(0.3); }
 
-        .header { padding: 15px; text-align: center; background: #000; border-bottom: 1px solid #1a1a1a; }
+        .header { padding: 15px; text-align: center; background: #000; border-bottom: 1px solid #1a1a1a; flex-shrink: 0; }
         .tabs { display: flex; justify-content: center; gap: 8px; margin-top: 10px; }
-        .tab { background: #0a0a0a; border: 1px solid #222; color: #555; padding: 8px 16px; border-radius: 8px; font-size: 10px; text-transform: uppercase; font-weight: 900; cursor: pointer; transition: 0.3s; }
+        .tab { background: #0a0a0a; border: 1px solid #222; color: #555; padding: 8px 16px; border-radius: 8px; font-size: 10px; text-transform: uppercase; font-weight: 900; cursor: pointer; }
         .tab.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
 
-        #viewport { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; padding: 20px; }
+        #viewport-container { 
+            flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); 
+            gap: 15px; padding: 20px; overflow-y: auto; align-content: center; justify-content: center;
+        }
 
-        .case-box { width: 100%; max-width: 400px; height: 80px; background: #000; border: 1px solid #1a1a1a; overflow: hidden; position: relative; display: none; border-radius: 10px; }
-        .case-pointer { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: var(--accent); z-index: 5; transform: translateX(-50%); box-shadow: 0 0 10px var(--accent); }
+        .widget { background: #000; border: 1px solid #1a1a1a; border-radius: 12px; height: 100px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+
+        /* CASE ANIMATION */
+        .case-mini { width: 100%; height: 60px; position: relative; overflow: hidden; }
+        .case-pointer { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: var(--accent); z-index: 5; transform: translateX(-50%); }
         .case-tape { display: flex; position: absolute; left: 50%; height: 100%; will-change: transform; }
-        .case-item { min-width: 80px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; border-right: 1px solid #111; }
+        .case-item { min-width: 60px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; border-right: 1px solid #111; color: #333; }
 
-        .wheel-box { position: relative; width: 260px; height: 260px; display: none; align-items: center; justify-content: center; }
-        .wheel-svg { width: 100%; height: 100%; transform: rotate(-90deg); transition: 5s cubic-bezier(0.1, 0, 0, 1); }
+        /* WHEEL ANIMATION */
+        .wheel-wrap { position: relative; width: 60px; height: 60px; }
+        .wheel-svg { transform: rotate(-90deg); width: 100%; height: 100%; }
 
-        .slot-box { display: none; gap: 10px; }
-        .slot-col { width: 70px; height: 100px; background: #000; border: 2px solid #111; border-radius: 12px; overflow: hidden; position: relative; }
+        /* SLOT ANIMATION */
+        .slot-row { display: flex; gap: 5px; }
+        .slot-col { width: 28px; height: 45px; background: #050505; border: 1px solid #222; border-radius: 4px; overflow: hidden; position: relative; }
         .slot-tape { position: absolute; width: 100%; will-change: transform; }
-        .slot-num { height: 100px; display: flex; align-items: center; justify-content: center; font-size: 45px; font-weight: 900; }
+        .slot-num { height: 45px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; }
 
-        .controls { background: var(--panel); padding: 25px; border-radius: 25px 25px 0 0; border-top: 1px solid #222; }
-        .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
-        input { background: #000; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 10px; font-weight: 700; width: 100%; }
-        .btn-roll { width: 100%; background: var(--accent); color: #000; border: none; padding: 18px; border-radius: 12px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
-
+        /* FINAL OVERLAY */
         #overlay { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; pointer-events: none; }
-        .winner-container { position: relative; display: flex; flex-direction: column; align-items: center; opacity: 0; transform: scale(0.5); }
-        
-        .winner-container.show-normal { animation: popSquare 4s forwards; }
-        .winner-container.show-long { animation: popSquare 8s forwards; }
+        .winner-container { display: flex; flex-direction: column; align-items: center; opacity: 0; width: 100%; }
+        .final-grid { display: flex; flex-wrap: wrap; gap: 40px 20px; justify-content: center; max-width: 95vw; padding-top: 50px; }
 
         .winner-square { 
-            width: 180px; height: 180px; background: rgba(20, 20, 25, 0.96); 
-            border: 2px solid var(--accent); border-radius: 24px; 
+            width: 110px; height: 110px; background: rgba(5, 5, 5, 1); 
+            border: 2px solid var(--accent); border-radius: 20px; 
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            backdrop-filter: blur(25px); z-index: 2;
-            box-shadow: 0 0 60px rgba(0, 255, 204, 0.3);
+            box-shadow: 0 0 30px var(--accent-glow);
+            position: relative; 
         }
-
-        .win-meme { margin-top: 20px; font-size: 16px; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 3px; }
-
-        .ez-disk-wrap {
-            position: absolute; top: -65px;
-            width: 130px; height: 130px; 
-            z-index: 1; animation: spinDisk 5s linear infinite;
-        }
-        .ez-disk-svg { width: 100%; height: 100%; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.8)); }
-
-        @keyframes spinDisk { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         
-        @keyframes popSquare {
-            0% { opacity: 0; transform: scale(0.5) translateY(50px); }
-            10% { opacity: 1; transform: scale(1.1) translateY(0); }
-            15% { transform: scale(1) translateY(0); }
-            90% { opacity: 1; transform: scale(1) translateY(0); }
-            100% { opacity: 0; transform: scale(1.5) translateY(-50px); }
+        /* THE PERFECT DISK: Narrower than square, peeks only from top */
+        .ez-disk-wrap { 
+            position: absolute; 
+            top: -45%; /* Выглядывает сверху */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%; /* МЕНЬШЕ ширины квадрата, чтобы не было видно по бокам */
+            height: 85%;
+            z-index: -1; /* Строго под квадратом */
+            animation: spinDisk 4s linear infinite; 
+            pointer-events: none;
         }
+
+        .win-info { position: relative; z-index: 10; text-align: center; pointer-events: none; } 
+        .win-num { font-size: 42px; font-weight: 900; color: #fff; line-height: 1; }
+        .win-meme { margin-top: 50px; font-size: 18px; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 5px; text-align: center; }
+
+        @keyframes spinDisk { from { transform: translateX(-50%) rotate(0deg); } to { transform: translateX(-50%) rotate(360deg); } }
+        @keyframes popIn { 
+            0% { opacity: 0; transform: scale(0.6); }
+            15% { opacity: 1; transform: scale(1.05); }
+            20% { transform: scale(1); }
+            90% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(1.2); }
+        }
+
+        /* CONTROLS */
+        .controls { background: var(--panel); padding: 20px; border-radius: 25px 25px 0 0; border-top: 1px solid #222; }
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .full-grid { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+        label { font-size: 8px; color: #444; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; }
+        input { background: #000; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 10px; width: 100%; text-align: center; font-weight: 900; font-size: 14px; }
+        .btn-roll { width: 100%; background: var(--accent); color: #000; border: none; padding: 18px; border-radius: 12px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="app">
     <div class="header">
-        <div style="font-size: 10px; color: #444; letter-spacing: 3px; font-weight: 900;">TWEAKOS NEXUS CORE</div>
+        <div style="font-size: 10px; color: #444; letter-spacing: 3px; font-weight: 900;">NEXUS MULTI-ENGINE v11.0</div>
         <div class="tabs">
-            <div class="tab active" onclick="setMode('case')">Case</div>
-            <div class="tab" onclick="setMode('upgrade')">Wheel</div>
-            <div class="tab" onclick="setMode('slot')">Slot</div>
+            <div class="tab active" onclick="setMode('case')">Cases</div>
+            <div class="tab" onclick="setMode('upgrade')">Wheels</div>
+            <div class="tab" onclick="setMode('slot')">Slots</div>
         </div>
     </div>
-
-    <div id="viewport">
-        <div id="v-case" class="case-box"><div class="case-pointer"></div><div class="case-tape" id="t-case"></div></div>
-        <div id="v-upgrade" class="wheel-box">
-            <svg class="wheel-svg" id="svg-wheel" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="45" fill="none" stroke="#111" stroke-width="6" />
-                <circle id="prog-wheel" cx="50" cy="50" r="45" fill="none" stroke="var(--accent)" stroke-width="6" stroke-dasharray="283" stroke-dashoffset="283" />
-            </svg>
-            <div style="position:absolute; font-size: 40px; font-weight: 900;">?</div>
-        </div>
-        <div id="v-slot" class="slot-box">
-            <div class="slot-col"><div class="slot-tape" id="st-1"></div></div>
-            <div class="slot-col"><div class="slot-tape" id="st-2"></div></div>
-            <div class="slot-col"><div class="slot-tape" id="st-3"></div></div>
-        </div>
-    </div>
-
+    <div id="viewport-container"></div>
     <div class="controls">
         <div class="input-grid">
             <input type="number" id="min" value="1">
             <input type="number" id="max" value="23">
+            <input type="number" id="count" value="1">
         </div>
-        <button class="btn-roll" onclick="roll()">Execute Randomizer</button>
+        <div class="full-grid">
+            <label>Exclusion Protocol (Manual Block)</label>
+            <input type="text" id="exclude" placeholder="e.g. 7, 13, 21">
+        </div>
+        <button id="roll-btn" class="btn-roll" onclick="roll()">Execute All Cores</button>
     </div>
 </div>
 
@@ -125,463 +131,132 @@
         if (busy) return;
         mode = m;
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        if (event && event.target.classList.contains('tab')) event.target.classList.add('active');
-        document.getElementById('v-case').style.display = m === 'case' ? 'block' : 'none';
-        document.getElementById('v-upgrade').style.display = m === 'upgrade' ? 'flex' : 'none';
-        document.getElementById('v-slot').style.display = m === 'slot' ? 'flex' : 'none';
+        event.target.classList.add('active');
+        document.getElementById('viewport-container').innerHTML = '';
     }
-
-    setMode('case');
 
     function roll() {
         if (busy) return;
         const min = parseInt(document.getElementById('min').value);
         const max = parseInt(document.getElementById('max').value);
+        const count = Math.min(parseInt(document.getElementById('count').value) || 1, 15);
+        const manualExcludes = document.getElementById('exclude').value.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
         
-        let winner;
-        
-        // НОВАЯ ЛОГИКА: 4 и 16 не выпадают ТОЛЬКО при диапазоне 1-23
-        if (min === 1 && max === 23) {
-            do {
-                winner = Math.floor(Math.random() * (max - min + 1)) + min;
-            } while (winner === 4 || winner === 16);
-        } else {
-            winner = Math.floor(Math.random() * (max - min + 1)) + min;
-        }
+        const container = document.getElementById('viewport-container');
+        container.innerHTML = ''; busy = true;
 
-        busy = true;
-        if (mode === 'case') runCase(winner, min, max);
-        if (mode === 'upgrade') runUpgrade(winner);
-        if (mode === 'slot') runSlot(winner);
+        let results = [];
+        const isRestrictedRange = (min === 1 && max === 23);
+
+        for (let i = 0; i < count; i++) {
+            let win;
+            let attempts = 0;
+            do {
+                win = Math.floor(Math.random() * (max - min + 1)) + min;
+                var isBlocked = (isRestrictedRange && (win === 4 || win === 16)) || manualExcludes.includes(win);
+                attempts++;
+            } while (isBlocked && attempts < 500);
+            
+            results.push(win);
+            const widget = document.createElement('div');
+            widget.className = 'widget';
+            container.appendChild(widget);
+
+            if (mode === 'case') initCase(widget, win, min, max, i);
+            else if (mode === 'upgrade') initWheel(widget, win, i);
+            else initSlot(widget, win, i);
+        }
+        setTimeout(() => showFinal(results), mode === 'slot' ? 5500 : 4000);
     }
 
-    function runCase(win, min, max) {
-        const t = document.getElementById('t-case');
-        t.innerHTML = ''; t.style.transition = 'none'; t.style.transform = 'translateX(0)';
+    function initCase(el, win, min, max, idx) {
+        el.innerHTML = `<div class="case-mini"><div class="case-pointer"></div><div class="case-tape" id="t-${idx}"></div></div>`;
+        const tape = document.getElementById(`t-${idx}`);
         for(let i=0; i<60; i++) {
             const d = document.createElement('div'); d.className = 'case-item';
             d.innerText = i === 55 ? win : Math.floor(Math.random()*(max-min+1))+min;
-            t.appendChild(d);
+            tape.appendChild(d);
         }
         setTimeout(() => {
-            t.style.transition = 'transform 4s cubic-bezier(0.1, 0, 0, 1)';
-            t.style.transform = `translateX(-${55*80 + 40}px)`;
+            tape.style.transition = `transform 3.5s cubic-bezier(0.1, 0, 0, 1)`;
+            tape.style.transform = `translateX(-${55*60 + 30}px)`;
         }, 50);
-        showFinal(win, 4500);
     }
 
-    function runUpgrade(win) {
-        const svg = document.getElementById('svg-wheel');
-        const prog = document.getElementById('prog-wheel');
-        prog.style.transition = 'none'; prog.style.strokeDashoffset = 283;
-        svg.style.transition = 'none'; svg.style.transform = 'rotate(-90deg)';
+    function initWheel(el, win, idx) {
+        el.innerHTML = `<div class="wheel-wrap"><svg class="wheel-svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="#111" stroke-width="6"/><circle id="w-circ-${idx}" cx="50" cy="50" r="45" fill="none" stroke="var(--accent)" stroke-width="6" stroke-dasharray="283" stroke-dashoffset="283"/></svg><div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:900;">?</div></div>`;
         setTimeout(() => {
-            svg.style.transition = 'transform 4s cubic-bezier(0.1, 0, 0, 1)';
-            svg.style.transform = `rotate(1800deg)`;
-            prog.style.transition = 'stroke-dashoffset 4s linear';
-            prog.style.strokeDashoffset = 0;
+            const c = document.getElementById(`w-circ-${idx}`);
+            c.style.transition = `stroke-dashoffset 3.5s linear`;
+            c.style.strokeDashoffset = 0;
         }, 50);
-        showFinal(win, 4500);
     }
 
-    function runSlot(win) {
-        const str = win.toString().padStart(3, '0');
-        for(let i=0; i<3; i++) {
-            const t = document.getElementById(`st-${i+1}`);
-            t.innerHTML = ''; t.style.transition = 'none'; t.style.transform = 'translateY(0)';
-            const len = 40 + i*10;
-            for(let j=0; j<len; j++) {
-                const d = document.createElement('div'); d.className = 'slot-num';
-                d.innerText = j === len-1 ? str[i] : Math.floor(Math.random()*10);
-                t.appendChild(d);
+    function initSlot(el, win, idx) {
+        el.innerHTML = `<div class="slot-row" id="s-row-${idx}"></div>`;
+        const row = document.getElementById(`s-row-${idx}`);
+        const str = win.toString().padStart(2, '0');
+        for(let i=0; i<2; i++) {
+            const col = document.createElement('div'); col.className = 'slot-col';
+            col.innerHTML = `<div class="slot-tape" id="st-${idx}-${i}"></div>`;
+            row.appendChild(col);
+            const tape = document.getElementById(`st-${idx}-${i}`);
+            for(let j=0; j<40; j++) {
+                const n = document.createElement('div'); n.className = 'slot-num';
+                n.innerText = j === 39 ? str[i] : Math.floor(Math.random()*10);
+                tape.appendChild(n);
             }
             setTimeout(() => {
-                t.style.transition = 'transform 4s cubic-bezier(0.1, 0, 0, 1)';
-                t.style.transform = `translateY(-${(len-1)*100}px)`;
-            }, i * 2000);
-        }
-        showFinal(win, 8500);
-    }
-
-    function showFinal(num, delay) {
-        setTimeout(() => {
-            document.getElementById('app').classList.add('blurred');
-            const over = document.getElementById('overlay');
-            over.innerHTML = '';
-
-            const container = document.createElement('div');
-            container.className = num === 5 ? 'winner-container show-long' : 'winner-container show-normal';
-            
-            if (num === 5) {
-                const diskWrap = document.createElement('div');
-                diskWrap.className = 'ez-disk-wrap';
-                diskWrap.innerHTML = `
-                    <svg class="ez-disk-svg" viewBox="0 0 100 100">
-                        <circle cx="50" cy="50" r="48" fill="#111" stroke="#222" stroke-width="1"/>
-                        <circle cx="50" cy="50" r="40" fill="none" stroke="#181818" stroke-width="0.5" />
-                        <circle cx="50" cy="50" r="30" fill="none" stroke="#181818" stroke-width="0.5" />
-                        <circle cx="50" cy="50" r="15" fill="#000" stroke="var(--accent)" stroke-width="0.5"/>
-                        <path id="curve" d="M 12,50 A 38,38 0 1,1 88,50 A 38,38 0 1,1 12,50" fill="none" />
-                        <text fill="var(--accent)" font-size="6" font-weight="900" letter-spacing="4">
-                            <textPath href="#curve">
-                                EZ4ENCE • EZ4ENCE • EZ4ENCE • EZ4ENCE •
-                            </textPath>
-                        </text>
-                    </svg>
-                `;
-                container.appendChild(diskWrap);
-            }
-
-            const square = document.createElement('div');
-            square.className = 'winner-square';
-            square.innerHTML = `
-                <div style="font-size: 10px; color: var(--accent); margin-bottom: 5px; font-weight:900;">WINNER</div>
-                <div style="font-size: 85px; font-weight: 900; color: #fff;">${num}</div>
-            `;
-            
-            const meme = document.createElement('div');
-            meme.className = 'win-meme';
-            meme.innerText = memes[Math.floor(Math.random() * memes.length)];
-
-            container.appendChild(square);
-            container.appendChild(meme);
-            over.appendChild(container);
-
-            const displayTime = num === 5 ? 8000 : 4000;
-
-            setTimeout(() => {
-                document.getElementById('app').classList.remove('blurred');
-                over.innerHTML = '';
-                busy = false;
-            }, displayTime);
-        }, delay);
-    }
-</script>
-</body>
-</html>
-  setTimeout(() => {
-                t.style.transition = 'transform 4s cubic-bezier(0.1, 0, 0, 1)';
-                t.style.transform = `translateY(-${(len-1)*100}px)`;
-            }, i * 2000);
-        }
-        showFinal(win, 8500);
-    }
-
-    function showFinal(num, delay) {
-        setTimeout(() => {
-            document.getElementById('app').classList.add('blurred');
-            const over = document.getElementById('overlay');
-            over.innerHTML = '';
-
-            const container = document.createElement('div');
-            // Если 5 — включаем долгую анимацию (8с), иначе обычную (4с)
-            container.className = num === 5 ? 'winner-container show-long' : 'winner-container show-normal';
-            
-            if (num === 5) {
-                const diskWrap = document.createElement('div');
-                diskWrap.className = 'ez-disk-wrap';
-                diskWrap.innerHTML = `
-                    <svg class="ez-disk-svg" viewBox="0 0 100 100">
-                        <circle cx="50" cy="50" r="48" fill="#111" stroke="#222" stroke-width="1"/>
-                        <circle cx="50" cy="50" r="40" fill="none" stroke="#181818" stroke-width="0.5" />
-                        <circle cx="50" cy="50" r="30" fill="none" stroke="#181818" stroke-width="0.5" />
-                        <circle cx="50" cy="50" r="15" fill="#000" stroke="var(--accent)" stroke-width="0.5"/>
-                        <path id="curve" d="M 12,50 A 38,38 0 1,1 88,50 A 38,38 0 1,1 12,50" fill="none" />
-                        <text fill="var(--accent)" font-size="6" font-weight="900" letter-spacing="4">
-                            <textPath href="#curve">
-                                EZ4ENCE • EZ4ENCE • EZ4ENCE • EZ4ENCE •
-                            </textPath>
-                        </text>
-                    </svg>
-                `;
-                container.appendChild(diskWrap);
-            }
-
-            const square = document.createElement('div');
-            square.className = 'winner-square';
-            square.innerHTML = `
-                <div style="font-size: 10px; color: var(--accent); margin-bottom: 5px; font-weight:900;">WINNER</div>
-                <div style="font-size: 85px; font-weight: 900; color: #fff;">${num}</div>
-            `;
-            
-            const meme = document.createElement('div');
-            meme.className = 'win-meme';
-            meme.innerText = memes[Math.floor(Math.random() * memes.length)];
-
-            container.appendChild(square);
-            container.appendChild(meme);
-            over.appendChild(container);
-
-            const displayTime = num === 5 ? 8000 : 4000;
-
-            setTimeout(() => {
-                document.getElementById('app').classList.remove('blurred');
-                over.innerHTML = '';
-                busy = false;
-            }, displayTime);
-        }, delay);
-    }
-</script>
-</body>
-</html>
-        }
-
-        .blur-effect {
-            filter: blur(15px) brightness(0.2);
-            transform: scale(0.92);
-            pointer-events: none;
-        }
-
-        .controls {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 12px;
-            background: var(--card-bg);
-            padding: 25px;
-            border-radius: 12px;
-            border: 1px solid #25282e;
-            margin-bottom: 20px;
-            flex-shrink: 0;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
-        .input-group { display: flex; flex-direction: column; }
-        label { font-size: 10px; text-transform: uppercase; color: #666; margin-bottom: 6px; font-weight: bold; }
-        input { 
-            background: #1f2229; border: 1px solid #323741; padding: 12px; 
-            border-radius: 8px; color: white; font-size: 14px; outline: none;
-        }
-        input:focus { border-color: var(--primary-color); }
-
-        button {
-            grid-column: 1 / -1;
-            background: var(--primary-color);
-            color: #000; border: none; padding: 16px;
-            font-weight: 900; border-radius: 8px; cursor: pointer;
-            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            text-transform: uppercase; letter-spacing: 1px;
-        }
-
-        button:hover { background: #00d4aa; box-shadow: 0 0 25px var(--accent-glow); transform: translateY(-2px); }
-
-        /* Сетка для рулеток */
-        #slots-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 15px;
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 10px;
-        }
-
-        .roulette-wrapper {
-            position: relative;
-            height: 110px;
-            background: #050608;
-            border-radius: 10px;
-            overflow: hidden;
-            border: 1px solid #25282e;
-            transition: all 0.5s ease;
-        }
-
-        .selector {
-            position: absolute; left: 50%; top: 0; bottom: 0;
-            width: 2px; background: var(--primary-color);
-            z-index: 10; transform: translateX(-50%);
-            box-shadow: 0 0 15px var(--primary-color);
-        }
-
-        .track { display: flex; position: absolute; left: 0; top: 0; height: 100%; }
-
-        .number-card {
-            min-width: 120px; height: 100%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 2.2rem; font-weight: 900; color: #222;
-            background: linear-gradient(180deg, #1a1d23 0%, #0a0b0d 100%);
-            border-right: 1px solid #050608;
-            box-sizing: border-box;
-        }
-
-        /* Оверлей для финального результата */
-        #win-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; display: flex; align-items: center; justify-content: center; z-index: 100;
-        }
-
-        #winner-list {
-            display: flex; flex-wrap: wrap; justify-content: center; gap: 40px;
-            opacity: 0; transform: translateY(50px) scale(0.8); 
-            transition: all 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        #winner-list.active { opacity: 1; transform: translateY(0) scale(1); }
-
-        .winner-container {
-            display: flex; flex-direction: column; align-items: center; gap: 15px;
-        }
-
-        .winner-ball {
-            width: 120px; height: 120px; background: #000;
-            border: 4px solid var(--primary-color); border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 3rem; font-weight: 900; color: var(--primary-color);
-            box-shadow: 0 0 40px var(--accent-glow);
-        }
-
-        .winner-caption {
-            font-size: 14px; font-weight: 800; color: #ff4444;
-            text-transform: uppercase; letter-spacing: 1px;
-            text-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
-            background: rgba(0,0,0,0.6); padding: 4px 10px; border-radius: 4px;
-        }
-
-        .history-mini { font-size: 12px; color: #444; margin-top: 15px; text-align: center; }
-    </style>
-</head>
-<body>
-
-<div id="main-content">
-    <h2 style="margin: 0 0 20px 0; letter-spacing: 4px; text-align: center;">SYSTEM RANDOMIZER</h2>
-    
-    <div class="controls">
-        <div class="input-group">
-            <label>Чисел (max 15)</label>
-            <input type="number" id="count" value="1" min="1" max="15">
-        </div>
-        <div class="input-group">
-            <label>Мин</label>
-            <input type="number" id="min" value="1">
-        </div>
-        <div class="input-group">
-            <label>Макс</label>
-            <input type="number" id="max" value="100">
-        </div>
-        <div class="input-group">
-            <label>Исключения</label>
-            <input type="text" id="exclude" placeholder="4, 16">
-        </div>
-        <button onclick="startMultiRoll()">ГЕНЕРИРОВАТЬ ВСЕ</button>
-    </div>
-
-    <div id="slots-container"></div>
-    <div class="history-mini" id="history"></div>
-</div>
-
-<div id="win-overlay">
-    <div id="winner-list"></div>
-</div>
-
-<script>
-    const CARD_WIDTH = 120;
-    let isRolling = false;
-
-    // Фразы, которые будут появляться снизу
-    const captions = [
-        "НУ НЕ РЕГАЕТ!",
-        "НЕ ПОВЕЗЛО",
-        "ДЕФОЛТ",
-        "ТАК И ЗНАЛ",
-        "НУ КАК ТАК-ТО?",
-        "ПОДПОЛНЫЙ РАНДОМ",
-        "ЧИСТО ВЕЗЕНИЕ",
-        "СКАМ",
-        "ОПЯТЬ НЕ ТО",
-        "ЛОВИ АПТЕЧКУ"
-    ];
-
-    function getRandomInt(min, max, excludes) {
-        const minV = parseInt(document.getElementById('min').value);
-        const maxV = parseInt(document.getElementById('max').value);
-        // Твое условие "но": 4 и 16 в бане, если диапазон 1-23
-        let ban = (minV === 1 && maxV === 23) ? [4, 16] : [];
-        let finalExcludes = [...excludes, ...ban];
-        
-        let num;
-        let attempts = 0;
-        do {
-            num = Math.floor(Math.random() * (max - min + 1)) + min;
-            attempts++;
-        } while (finalExcludes.includes(num) && attempts < 1500);
-        return num;
-    }
-
-    function startMultiRoll() {
-        if (isRolling) return;
-        
-        const count = Math.min(parseInt(document.getElementById('count').value) || 1, 15);
-        const min = parseInt(document.getElementById('min').value);
-        const max = parseInt(document.getElementById('max').value);
-        const excludes = document.getElementById('exclude').value.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
-        
-        const container = document.getElementById('slots-container');
-        container.innerHTML = '';
-        const results = [];
-        isRolling = true;
-
-        for (let i = 0; i < count; i++) {
-            const res = getRandomInt(min, max, excludes);
-            results.push(res);
-
-            const wrapper = document.createElement('div');
-            wrapper.className = 'roulette-wrapper';
-            wrapper.innerHTML = `<div class="selector"></div><div class="track" id="track-${i}"></div>`;
-            container.appendChild(wrapper);
-
-            const track = document.getElementById(`track-${i}`);
-            const winIdx = 45 + (i * 2); // Сдвиг для разного времени остановки
-
-            for (let j = 0; j < winIdx + 10; j++) {
-                const card = document.createElement('div');
-                card.className = 'number-card';
-                // В самой ленте 4 и 16 могут мелькать, но не выпадут (по твоему условию)
-                card.textContent = (j === winIdx) ? res : Math.floor(Math.random() * (max - min + 1)) + min;
-                track.appendChild(card);
-            }
-
-            setTimeout(() => {
-                const center = wrapper.offsetWidth / 2;
-                const targetPos = (winIdx * CARD_WIDTH) - center + (CARD_WIDTH / 2);
-                const drift = Math.random() * 60 - 30; // Рандомное положение внутри карточки
-                track.style.transition = `transform ${5 + i * 0.3}s cubic-bezier(0.1, 0, 0.1, 1)`;
-                track.style.transform = `translateX(-${targetPos + drift}px)`;
+                tape.style.transition = `transform ${3 + i}s cubic-bezier(0.1, 0, 0, 1)`;
+                tape.style.transform = `translateY(-${39*45}px)`;
             }, 50);
         }
+    }
 
-        // Финал анимации
+    function showFinal(nums) {
+        document.getElementById('app').classList.add('blurred');
+        const over = document.getElementById('overlay'); over.innerHTML = '';
+        const hasSpecial = nums.includes(5);
+        const container = document.createElement('div');
+        container.className = 'winner-container';
+        container.style.animation = `popIn ${hasSpecial ? 8 : 4}s forwards`;
+
+        const grid = document.createElement('div'); grid.className = 'final-grid';
+
+        nums.forEach(n => {
+            const sq = document.createElement('div'); sq.className = 'winner-square';
+            const uid = Math.random().toString(36).substr(2, 9);
+            
+            if (n === 5) {
+                sq.innerHTML = `
+                <div class="ez-disk-wrap">
+                    <svg viewBox="0 0 100 100" style="width:100%; height:100%;">
+                        <circle cx="50" cy="50" r="48" fill="#050505" stroke="var(--accent)" stroke-width="1"/>
+                        <path id="path-${uid}" d="M 15,50 A 35,35 0 1,1 85,50 A 35,35 0 1,1 15,50" fill="none"/>
+                        <text fill="var(--accent)" font-size="7" font-weight="900">
+                            <textPath href="#path-${uid}">EZ4ENCE • EZ4ENCE • EZ4ENCE • EZ4ENCE •</textPath>
+                        </text>
+                        <circle cx="50" cy="50" r="12" fill="#000" stroke="var(--accent)" stroke-width="1"/>
+                    </svg>
+                </div>`;
+            }
+
+            sq.innerHTML += `
+            <div class="win-info">
+                <div style="font-size:7px; color:var(--accent); font-weight:900; margin-bottom:2px; letter-spacing:1px;">RESULT</div>
+                <div class="win-num">${n}</div>
+            </div>`;
+            grid.appendChild(sq);
+        });
+
+        const meme = document.createElement('div'); meme.className = 'win-meme';
+        meme.innerText = memes[Math.floor(Math.random() * memes.length)];
+        container.appendChild(grid); container.appendChild(meme); over.appendChild(container);
+
         setTimeout(() => {
-            const listContainer = document.getElementById('winner-list');
-            listContainer.innerHTML = '';
-
-            results.forEach(num => {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'winner-container';
-
-                const ball = document.createElement('div');
-                ball.className = 'winner-ball';
-                ball.textContent = num;
-
-                const cap = document.createElement('div');
-                cap.className = 'winner-caption';
-                cap.textContent = captions[Math.floor(Math.random() * captions.length)];
-
-                wrapper.appendChild(ball);
-                wrapper.appendChild(cap);
-                listContainer.appendChild(wrapper);
-            });
-
-            document.getElementById('main-content').classList.add('blur-effect');
-            listContainer.classList.add('active');
-
-            const hist = document.getElementById('history');
-            hist.innerHTML = 'ЛОГ: ' + results.join(', ') + ' | ' + hist.innerHTML;
-
-            setTimeout(() => {
-                listContainer.classList.remove('active');
-                document.getElementById('main-content').classList.remove('blur-effect');
-                isRolling = false;
-            }, 4000);
-
-        }, 5500 + (count * 300));
+            document.getElementById('app').classList.remove('blurred');
+            over.innerHTML = ''; busy = false;
+        }, hasSpecial ? 8000 : 4000);
     }
 </script>
 </body>
