@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TWEAKOS // NEXUS MULTI-CORE v12.7</title>
+    <title>TWEAKOS // NEXUS MULTI-CORE v12.9</title>
     <style>
         :root {
             --bg: #020203;
@@ -18,15 +18,34 @@
         #app { display: flex; flex-direction: column; height: 100%; transition: 0.8s; }
         .blurred { filter: blur(35px) brightness(0.3); }
 
+        /* HEADER */
         .header { padding: 15px; text-align: center; background: #000; border-bottom: 1px solid #1a1a1a; flex-shrink: 0; }
         .tabs { display: flex; justify-content: center; gap: 8px; margin-top: 10px; }
         .tab { background: #0a0a0a; border: 1px solid #222; color: #555; padding: 8px 16px; border-radius: 8px; font-size: 10px; text-transform: uppercase; font-weight: 900; cursor: pointer; }
         .tab.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
 
+        /* VIEWPORT - ТЕПЕРЬ ОГРАНИЧЕН ПО ВЫСОТЕ, ЧТОБЫ КОНТРОЛЛЫ БЫЛИ ВИДНЫ */
         #viewport-container { 
             flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); 
-            gap: 15px; padding: 20px; overflow-y: auto; align-content: center; justify-content: center;
+            gap: 15px; padding: 20px; overflow-y: auto; align-content: start; justify-content: center;
         }
+
+        /* CONTROLS - РАСПОЛОЖЕНЫ НИЖЕ ИГРОВОГО ПОЛЯ, НО НЕ В САМОМ НИЗУ */
+        .controls { 
+            background: var(--panel); 
+            padding: 20px; 
+            border-top: 1px solid #222; 
+            border-bottom: 1px solid #222; 
+            flex-shrink: 0;
+            margin-bottom: 40px; /* Отступ снизу, чтобы не было в упор к краю */
+        }
+        
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .full-grid { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+        label { font-size: 8px; color: #444; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; }
+        input { background: #000; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 10px; width: 100%; text-align: center; font-weight: 900; font-size: 14px; }
+        .btn-roll { width: 100%; background: var(--accent); color: #000; border: none; padding: 15px; border-radius: 12px; font-weight: 900; text-transform: uppercase; cursor: pointer; transition: 0.2s; }
+        .btn-roll:active { transform: scale(0.98); opacity: 0.8; }
 
         .widget { background: #000; border: 1px solid #1a1a1a; border-radius: 12px; height: 110px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
 
@@ -83,28 +102,22 @@
             90% { opacity: 1; transform: scale(1); }
             100% { opacity: 0; transform: scale(1.2); }
         }
-
-        /* CONTROLS */
-        .controls { background: var(--panel); padding: 20px; border-radius: 25px 25px 0 0; border-top: 1px solid #222; }
-        .input-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        .full-grid { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
-        label { font-size: 8px; color: #444; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; }
-        input { background: #000; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 10px; width: 100%; text-align: center; font-weight: 900; font-size: 14px; }
-        .btn-roll { width: 100%; background: var(--accent); color: #000; border: none; padding: 18px; border-radius: 12px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="app">
     <div class="header">
-        <div style="font-size: 10px; color: #444; letter-spacing: 3px; font-weight: 900;">NEXUS MULTI-ENGINE v12.7</div>
+        <div style="font-size: 10px; color: #444; letter-spacing: 3px; font-weight: 900;">NEXUS MULTI-ENGINE v12.9</div>
         <div class="tabs">
             <div class="tab active" onclick="setMode('case')">Cases</div>
             <div class="tab" onclick="setMode('upgrade')">Wheels</div>
             <div class="tab" onclick="setMode('slot')">Slots</div>
         </div>
     </div>
+
     <div id="viewport-container"></div>
+
     <div class="controls">
         <div class="input-grid">
             <input type="number" id="min" value="1">
@@ -149,7 +162,7 @@
         if (!audioCtx) return;
         if (isEz) {
             ez4enceAudio.currentTime = 0;
-            ez4enceAudio.play().catch(e => console.error("Audio file 'ez4ence.ogg' not found or blocked."));
+            ez4enceAudio.play().catch(e => console.error("Audio 'ez4ence.ogg' required."));
         } else {
             [261.63, 329.63, 392.00, 523.25].forEach((f, i) => {
                 setTimeout(() => playTick(f, 0.2), i * 100);
@@ -161,7 +174,7 @@
         if (busy) return;
         mode = m;
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        event.target.classList.add('active');
+        event.currentTarget.classList.add('active');
         document.getElementById('viewport-container').innerHTML = '';
     }
 
@@ -185,6 +198,7 @@
             function gen() { return Math.floor(Math.random() * (max - min + 1)) + min; }
             do {
                 win = gen();
+                // 80% шанс переброса для 4 и 16
                 if ((win === 4 || win === 16) && Math.random() < 0.80) { win = gen(); }
                 var isEx = manualExcludes.includes(win);
                 att++;
@@ -196,6 +210,118 @@
             container.appendChild(widget);
 
             if (mode === 'case') initCase(widget, win, min, max, i);
+            else if (mode === 'upgrade') initWheel(widget, win, min, max, i);
+            else initSlot(widget, win, max, i);
+        }
+
+        setTimeout(() => {
+            const hasEz = results.includes(5) || results.includes(21);
+            playEndSound(hasEz);
+            showFinal(results);
+        }, mode === 'slot' ? 6000 : 4500);
+    }
+
+    function initCase(el, win, min, max, idx) {
+        el.innerHTML = `<div class="case-mini"><div class="case-pointer"></div><div class="case-tape" id="t-${idx}"></div></div>`;
+        const tape = document.getElementById(`t-${idx}`);
+        for(let i=0; i<60; i++) {
+            const d = document.createElement('div'); d.className = 'case-item';
+            d.innerText = i === 55 ? win : Math.floor(Math.random()*(max-min+1))+min;
+            tape.appendChild(d);
+        }
+        let ticks = 0;
+        const interval = setInterval(() => { if (ticks > 50) clearInterval(interval); playTick(300 + ticks * 2, 0.05); ticks++; }, 60);
+        setTimeout(() => {
+            tape.style.transition = `transform 3.5s cubic-bezier(0.1, 0, 0, 1)`;
+            tape.style.transform = `translateX(-${55*60 + 30}px)`;
+        }, 50);
+    }
+
+    function initWheel(el, win, min, max, idx) {
+        const range = max - min + 1;
+        let sectorsSvg = '';
+        for(let i = 0; i < Math.min(range, 24); i++) {
+            const angle = (360 / Math.min(range, 24)) * i;
+            sectorsSvg += `<line x1="50" y1="50" x2="50" y2="5" stroke="#1a1a1a" stroke-width="0.5" transform="rotate(${angle}, 50, 50)" />`;
+        }
+        el.innerHTML = `<div class="wheel-container"><svg viewBox="0 0 100 100" style="width:100%; height:100%;"><circle cx="50" cy="50" r="45" fill="#050505" stroke="#1a1a1a" stroke-width="2"/>${sectorsSvg}<circle cx="50" cy="50" r="4" fill="var(--accent)"/></svg><div class="wheel-arrow" id="arrow-${idx}"></div></div>`;
+        let ticks = 0;
+        const interval = setInterval(() => { if (ticks > 30) clearInterval(interval); playTick(500, 0.03); ticks++; }, 100);
+        setTimeout(() => {
+            const arrow = document.getElementById(`arrow-${idx}`);
+            const targetAngle = ((win - min) / range) * 360 + (360 * 5);
+            arrow.style.transition = `transform 3.5s cubic-bezier(0.1, 0, 0, 1)`;
+            arrow.style.transform = `rotate(${targetAngle}deg)`;
+        }, 50);
+    }
+
+    function initSlot(el, win, maxVal, idx) {
+        const reelsCount = maxVal.toString().length;
+        el.innerHTML = `<div class="slot-row" id="s-row-${idx}"></div>`;
+        const row = document.getElementById(`s-row-${idx}`);
+        const winStr = win.toString().padStart(reelsCount, '0');
+        for(let i=0; i < reelsCount; i++) {
+            const col = document.createElement('div'); col.className = 'slot-col';
+            col.innerHTML = `<div class="slot-tape" id="st-${idx}-${i}"></div>`;
+            row.appendChild(col);
+            const tape = document.getElementById(`st-${idx}-${i}`);
+            for(let j=0; j<40; j++) {
+                const n = document.createElement('div'); n.className = 'slot-num';
+                n.innerText = j === 39 ? winStr[i] : Math.floor(Math.random()*10);
+                tape.appendChild(n);
+            }
+            setTimeout(() => {
+                let sTick = 0;
+                const sInt = setInterval(() => { if(sTick > 20) clearInterval(sInt); playTick(200, 0.04); sTick++; }, 150);
+                tape.style.transition = `transform ${3 + (i * 0.5)}s cubic-bezier(0.1, 0, 0, 1)`;
+                tape.style.transform = `translateY(-${39*40}px)`;
+            }, 50);
+        }
+    }
+
+    function showFinal(nums) {
+        document.getElementById('app').classList.add('blurred');
+        const over = document.getElementById('overlay'); over.innerHTML = '';
+        const hasSpecial = nums.includes(5) || nums.includes(21);
+        const container = document.createElement('div');
+        container.className = 'winner-container';
+        container.style.animation = `popIn ${hasSpecial ? 8 : 4}s forwards`;
+        const grid = document.createElement('div'); grid.className = 'final-grid';
+
+        nums.forEach(n => {
+            const sq = document.createElement('div'); sq.className = 'winner-square';
+            const uid = Math.random().toString(36).substr(2, 9);
+            const numLen = n.toString().length;
+            if(numLen > 2) sq.style.minWidth = (110 + (numLen - 2) * 25) + 'px';
+
+            if (n === 5 || n === 21) {
+                sq.innerHTML = `
+                <div class="ez-disk-wrap">
+                    <svg viewBox="0 0 100 100" style="width:100%; height:100%;">
+                        <circle cx="50" cy="50" r="48" fill="#050505" stroke="var(--accent)" stroke-width="1"/>
+                        <path id="path-${uid}" d="M 15,50 A 35,35 0 1,1 85,50 A 35,35 0 1,1 15,50" fill="none"/>
+                        <text fill="var(--accent)" font-size="7" font-weight="900"><textPath href="#path-${uid}">EZ4ENCE • EZ4ENCE • EZ4ENCE • EZ4ENCE •</textPath></text>
+                        <circle cx="50" cy="50" r="12" fill="#000" stroke="var(--accent)" stroke-width="1"/>
+                    </svg>
+                </div>`;
+            }
+            sq.innerHTML += `<div class="win-info"><div style="font-size:7px; color:var(--accent); font-weight:900; margin-bottom:2px; letter-spacing:1px;">CORE RESULT</div><div class="win-num">${n}</div></div>`;
+            grid.appendChild(sq);
+        });
+
+        const meme = document.createElement('div'); meme.className = 'win-meme';
+        meme.innerText = memes[Math.floor(Math.random() * memes.length)];
+        container.appendChild(grid); container.appendChild(meme); over.appendChild(container);
+        setTimeout(() => {
+            document.getElementById('app').classList.remove('blurred');
+            over.innerHTML = ''; busy = false;
+            ez4enceAudio.pause(); ez4enceAudio.currentTime = 0;
+        }, hasSpecial ? 8000 : 4000);
+    }
+</script>
+</body>
+</html>
+de === 'case') initCase(widget, win, min, max, i);
             else if (mode === 'upgrade') initWheel(widget, win, min, max, i);
             else initSlot(widget, win, max, i);
         }
